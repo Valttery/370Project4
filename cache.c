@@ -156,7 +156,7 @@ int cache_access(int addr, int write_flag, int write_data)
 
     if (!hit) { // if missed
         if (empty) { // there exists an empty block, use it
-            targetIndex = empty;
+            targetIndex = emptyIndex;
         } else { // no empty block, find an LRU to replace
             targetIndex = start;
             for (int i = start; i < end; i++) {
@@ -166,54 +166,45 @@ int cache_access(int addr, int write_flag, int write_data)
             }
             // the address of the dirty block
             int writebackMemAddr = ((cache.blocks[targetIndex].tag*numSets)+setIndex)*blockSize;
-            printAction(writebackMemAddr, blockSize, cacheToNowhere);
             if (cache.blocks[targetIndex].dirty) {
                 // If the target block is dirty, write back to mem
                 for (int j = 0; j < blockSize; j++) {
                     mem_access(writebackMemAddr+j, 1, cache.blocks[targetIndex].data[j]);
                 }
                 cache.blocks[targetIndex].dirty = 0;
-                int temp = addr / blockSize;
-                int targetBlockStartAddr = temp * blockSize;
-                for (int j = 0; j < blockSize; j++) {
-                    cache.blocks[targetIndex].data[j] = mem_access(targetBlockStartAddr+j, 0, 0);
-                }
-                cache.blocks[targetIndex].tag = tag;
-                cache.blocks[targetIndex].valid = 1;
-                cache.blocks[targetIndex].lruLabel = 0;
-                printAction(targetBlockStartAddr, blockSize, memoryToCache);
-            } else { // Clean block, directly overwrite
-                int temp = addr / blockSize;
-                int targetBlockStartAddr = temp * blockSize;
-                for (int j = 0; j < blockSize; j++) {
-                    cache.blocks[targetIndex].data[j] = mem_access(targetBlockStartAddr+j, 0, 0);
-                }
-                cache.blocks[targetIndex].tag = tag;
-                cache.blocks[targetIndex].valid = 1;
-                cache.blocks[targetIndex].lruLabel = 0;
-                printAction(targetBlockStartAddr, blockSize, memoryToCache);
+                printAction(writebackMemAddr, blockSize, cacheToMemory);
+            } else { // clean block, directly overwrite
+                printAction(writebackMemAddr, blockSize, cacheToNowhere);
             }
         }
-
-        // Update all the LRU labels
-        for (int i = start; i < end; i++) {
-            if (cache.blocks[i].valid) {
-                cache.blocks[i].lruLabel++;
-            }
+        int temp = addr / blockSize;
+        int targetBlockStartAddr = temp * blockSize;
+        for (int j = 0; j < blockSize; j++) {
+            cache.blocks[targetIndex].data[j] = mem_access(targetBlockStartAddr+j, 0, 0);
         }
+        cache.blocks[targetIndex].tag = tag;
+        cache.blocks[targetIndex].valid = 1;
         cache.blocks[targetIndex].lruLabel = 0;
-
-        if (write_flag) {
-            cache.blocks[targetIndex].data[blockOffset] = write_data;
-            cache.blocks[targetIndex].dirty = 1;
-            printAction(addr, 1, processorToCache);
-            return -1; // return value undefined
-        } else {
-            printAction(addr, 1, cacheToProcessor);
-            return cache.blocks[targetIndex].data[blockOffset];
+        printAction(targetBlockStartAddr, blockSize, memoryToCache);
+        
+    }
+    // Update all the LRU labels
+    for (int i = start; i < end; i++) {
+        if (cache.blocks[i].valid) {
+            cache.blocks[i].lruLabel++;
         }
     }
+    cache.blocks[targetIndex].lruLabel = 0;
 
+    if (write_flag) {
+        cache.blocks[targetIndex].data[blockOffset] = write_data;
+        cache.blocks[targetIndex].dirty = 1;
+        printAction(addr, 1, processorToCache);
+        return -1; // return value undefined
+    } else {
+        printAction(addr, 1, cacheToProcessor);
+        return cache.blocks[targetIndex].data[blockOffset];
+    }
 }
 
 
