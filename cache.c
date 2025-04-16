@@ -97,6 +97,19 @@ void cache_init(int blockSize, int numSets, int blocksPerSet)
 
     /********************* Initialize Cache *********************/
 
+    cache.blockSize = blockSize;
+    cache.numSets = numSets;
+    cache.blocksPerSet = blocksPerSet;
+    for (int i = 0; i < numSets*blocksPerSet; i++) {
+        for (int j = 0; j < blockSize; j++) {
+            cache.blocks[i].data[j] = 0;
+        }
+        cache.blocks[i].dirty = 0;
+        cache.blocks[i].lruLabel = 0;
+        cache.blocks[i].tag = 0;
+        cache.blocks[i].valid = 0;
+    }
+
     return;
 }
 
@@ -112,10 +125,15 @@ void cache_init(int blockSize, int numSets, int blocksPerSet)
  */
 int cache_access(int addr, int write_flag, int write_data)
 {
-    /* The next line is a placeholder to connect the simulator to
-    memory with no cache. You will remove this line and implement
-    a cache which interfaces between the simulator and memory. */
-    return mem_access(addr, write_flag, write_data);
+    int blockSize = cache.blockSize;
+    int numSets = cache.numSets;
+    int blocksPerSet = cache.blocksPerSet;
+
+    // Decoding the address
+    int blockOffset = addr % blockSize;
+    int setIndex = (addr / blockSize) % numSets;
+    int tag = (addr / blockSize) / numSets;
+    
 }
 
 
