@@ -147,7 +147,7 @@ int cache_access(int addr, int write_flag, int write_data)
             targetIndex = i;
             hit = 1;
             break;
-        } else if (cache.blocks[i].valid && empty == 0) { 
+        } else if (!cache.blocks[i].valid && empty == 0) { 
             // encounters an empty block, valid if miss
             emptyIndex = i;
             empty = 1;
@@ -195,7 +195,7 @@ int cache_access(int addr, int write_flag, int write_data)
         }
     }
     cache.blocks[targetIndex].lruLabel = 0;
-
+    
     if (write_flag) {
         cache.blocks[targetIndex].data[blockOffset] = write_data;
         cache.blocks[targetIndex].dirty = 1;
@@ -205,16 +205,17 @@ int cache_access(int addr, int write_flag, int write_data)
         printAction(addr, 1, cacheToProcessor);
         return cache.blocks[targetIndex].data[blockOffset];
     }
+    
 }
 
 
 /*
- * print end of run statistics like in the spec. **This is not required**,
- * but is very helpful in debugging.
- * This should be called once a halt is reached.
- * DO NOT delete this function, or else it won't compile.
- * DO NOT print $$$ in this function
- */
+* print end of run statistics like in the spec. **This is not required**,
+* but is very helpful in debugging.
+* This should be called once a halt is reached.
+* DO NOT delete this function, or else it won't compile.
+* DO NOT print $$$ in this function
+*/
 void printStats(void)
 {
     printf("End of run statistics:\n");
